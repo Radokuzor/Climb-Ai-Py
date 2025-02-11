@@ -1,0 +1,31 @@
+# byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# tests and coverage
+*.pytest_cache
+.coverage
+
+# database & logs
+*.db
+*.sqlite3
+*.log
+
+# venv
+env
+venv
+/env
+/venv
+
+#environment variable file
+.env
+.vscode
+export_env.sh
+doc-export.sh
+db-backup.sh
+
+.env
+Pipfile.lock
+./__pycache__
+__pycache__
+.DS_Store
