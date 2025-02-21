@@ -8,6 +8,7 @@ from typing import Any
 
 
 class SuccessResponseSerializer(BaseModel):
+    success: bool
     status_code: conint() = status.HTTP_200_OK
     message: constr() = "Success"
     data: Any = None
@@ -16,8 +17,10 @@ class WebsocketSuccessResponseSerializer(SuccessResponseSerializer):
     response_type: conint()
     
 class ErrorResponseSerializer(BaseModel):
+    success: bool
     status_code: conint() = status.HTTP_400_BAD_REQUEST
     message: constr() = "Error"
+    error: constr()
     data: Any = None
 
 class WebsocketErrorResponseSerializer(ErrorResponseSerializer):
