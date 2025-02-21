@@ -9,7 +9,9 @@ from src.utils.telnyx import send_telnyx_message
 
 from datetime import datetime
 
-import asyncio, json
+import asyncio, json, logging
+
+logger = logging.getLogger(__name__)
 
 
 async def handle_ai_response(from_phone_number: str, to_phone_number: str, inbound_message: str):
@@ -30,7 +32,7 @@ async def handle_ai_response(from_phone_number: str, to_phone_number: str, inbou
             lead_id = existing_lead_doc.id
             print(f"Lead already exists with ID: {lead_id}")
         else:
-            new_lead_ref = leads_collection.add({
+            new_lead_ref, _ = leads_collection.add({
                 "phoneNumber": from_phone_number,
                 "companyPhoneNumber": to_phone_number,
                 "dateCreated": datetime.now().isoformat(),
@@ -454,3 +456,49 @@ async def send_text_to_chatgpt_for_lead_details_conf(conversation, new_message, 
         'userObject': {'phoneNumber': lead_phone_number, 'companyPhoneNumber': company_phone_number}
     }
 
+
+async def send_text_to_chatgpt_for_email_scraping(email: str):
+    if not email or not isinstance(email, str) or not email.strip():
+        logger.info("Invalid email provided for scraping.")
+        return False, "Invalid email input. Please provide a valid email string."
+
+    logger.info(f"Sending email: {email} to chat for scraping")
+
+    try:
+        # Create a new thread
+        thread = await client.beta.threads.create(
+            messages=[{"role": "user", "content": email}]
+        )
+
+        # Start the assistant run
+        run = await client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id="asst_96fZpFCfX8Tj8QieTXySrlgr"
+        )
+
+        # Stream the response
+        while True:
+            run_status = await client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+            if run_status.status in ["completed", "failed", "cancelled"]:
+                break
+            await asyncio.sleep(1)  # Wait before checking again
+
+        messages = await client.beta.threads.messages.list(thread_id=thread.id)
+
+        if messages.data:
+            
+            last_message = messages.data[0]  # Assuming the last message is the assistant's response
+            if last_message.content and last_message.content[0].type == "text":
+                try:
+                    data = json.loads(last_message.content[0].text.value)
+                    return True, data
+                except json.JSONDecodeError:
+                    logger.error("Error parsing assistant response.")
+                    return False, "Error parsing assistant response."
+        
+        logger.error("Empty or unexpected response from assistant.")
+        return False, "Empty or unexpected response from assistant."
+    
+    except Exception as e:
+        logger.error(f"Error creating thread: {e}",exc_info=True)
+        return False, "Failed to create thread for email scraping."

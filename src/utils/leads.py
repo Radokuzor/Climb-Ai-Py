@@ -62,7 +62,7 @@ async def create_or_update_lead(task_data, user_id, company_id):
 
         message = f"New lead with phone number {lead_phone} has been created successfully."
 
-    return message
+    return message, lead_id
 
 
 async def get_lead(task_data, recipient_phone_number):
